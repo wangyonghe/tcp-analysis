@@ -5,8 +5,11 @@
 int main()
 {
 	PCAPMonitor * pcap = new PCAPMonitor();
-	pcap->startCapture();
+	pcap->start();
 	
+	getchar();
+	
+	pcap->stop();
 	delete pcap;
 	return 0;
 }

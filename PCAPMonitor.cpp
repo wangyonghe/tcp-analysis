@@ -1,6 +1,6 @@
 #include "PCAPMonitor.hpp"
 
-PCAPMonitor::PCAPMonitor()
+PCAPMonitor::PCAPMonitor() : mRunning(false), mStopRequested(false)
 {
 	char buffer[PCAP_ERRBUF_SIZE];
 	char * device;
@@ -11,15 +11,32 @@ PCAPMonitor::PCAPMonitor()
 	else
 		mDevice = device;
 
-	cout<<"Device found: "<<mDevice<<endl;
+	pthread_mutex_init(&mMutex, 0);
 }
-void PCAPMonitor::startCapture()
+void PCAPMonitor::start()
 {
+	mRunning = true;
+	
 	char buffer[PCAP_ERRBUF_SIZE];
-	pcap_t * handle = pcap_open_live(mDevice.c_str(), 2048, 1, 10, buffer);
-    
+	mHandle = pcap_open_live(mDevice.c_str(), 2048, 1, 10, buffer);
+	
+	pthread_create(&mThread, 0, PCAPMonitor::startThread, this);
+}
+void PCAPMonitor::stop()
+{	
+	mStopRequested = true;
+	mRunning = false;
+	pcap_breakloop(mHandle);
+	pthread_join(mThread, 0);
+}
+void * PCAPMonitor::startThread(void * object)
+{
+	PCAPMonitor * pcap = (PCAPMonitor*) object;
+ 
     u_char buff[2048];
-    pcap_loop(handle, -1, callback, buff);
+    pcap_loop(pcap->mHandle, -1, PCAPMonitor::callback, buff);
+    
+    return 0;
 }
 void PCAPMonitor::callback(u_char * user, const struct pcap_pkthdr * header, const u_char * packet)
 {
@@ -53,4 +70,8 @@ void PCAPMonitor::callback(u_char * user, const struct pcap_pkthdr * header, con
 			cout<<"TCP Packet: "<<endl<<" |- Source: "<<inet_ntoa(source.sin_addr)<<":"<<ntohs(tcph->source)<<endl<<" |- Destination: "<<inet_ntoa(dest.sin_addr)<<":"<<ntohs(tcph->dest)<<endl;
 		}
 	}
+}
+PCAPMonitor::~PCAPMonitor()
+{
+	pthread_mutex_destroy(&mMutex);
 }

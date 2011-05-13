@@ -19,12 +19,20 @@ class PCAPMonitor
 {
 	public:
 		PCAPMonitor();
-		void startCapture();
+		void start();
+		void stop();
+		~PCAPMonitor();
 	
 	private:
+		static void * startThread(void * object);
 		static void callback(u_char * user, const struct pcap_pkthdr * handle, const u_char * buffer);
 	
-		string mDevice;
+		string 			mDevice;
+		pcap_t * 		mHandle;
+		bool 			mRunning;
+		bool			mStopRequested;
+		pthread_mutex_t	mMutex;
+		pthread_t		mThread;
 		
 };
 
