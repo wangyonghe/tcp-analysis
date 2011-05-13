@@ -2,6 +2,8 @@
 #define PCAPMONITOR_HPP
 
 #include <string>
+#include <iostream>
+#include <pcap.h>
 
 using namespace std;
 
@@ -13,7 +15,6 @@ class PCAPMonitor
 	private:
 		string mDevice;
 		
-		
-}
+};
 
 #endif
